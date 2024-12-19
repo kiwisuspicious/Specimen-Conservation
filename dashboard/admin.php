@@ -34,97 +34,111 @@ $stmt->execute();
 $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Fetch the appID from POST request (for the specific application to be exported)
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
-    $appID = $_POST['appID'];
+// Handle form submissions
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Ensure that appID is set before proceeding
+    if (isset($_POST['appID'])) {
+        $appID = $_POST['appID'];
 
-    try {
-        // Start with clean output buffer
-        if (ob_get_level()) {
-            ob_end_clean();
-        }
+        if (isset($_POST['acceptApp'])) {
+            // Handle Accept action
+            $query = "UPDATE application SET status = 1 WHERE appID = :appID";
+            $stmt = $pdo->prepare($query);
+            $stmt->bindParam(':appID', $appID, PDO::PARAM_INT);
 
-        // Prepare the query to fetch the data for the specific application
-        $query = "SELECT * FROM application WHERE appID = :appID";
-        $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':appID', $appID, PDO::PARAM_STR);  // Using PDO::PARAM_STR as appID is a string
-        $stmt->execute();
-
-        // Fetch the record for the selected application
-        $application = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // Check if the application exists
-        if ($application) {
-            // Create a new Spreadsheet
-            $spreadsheet = new Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
-
-            // Set column headers
-            $sheet->setCellValue('A1', 'App ID');
-            $sheet->setCellValue('B1', 'Email');
-            $sheet->setCellValue('C1', 'Category Number');
-            $sheet->setCellValue('D1', 'Specimen Name');
-            $sheet->setCellValue('E1', 'Location');
-            $sheet->setCellValue('F1', 'Examination');
-            $sheet->setCellValue('G1', 'Material');
-            $sheet->setCellValue('H1', 'Work Method');
-            $sheet->setCellValue('I1', 'Inspector Name');
-            $sheet->setCellValue('J1', 'Remarks');
-            $sheet->setCellValue('K1', 'Condition');
-
-            // Populate the spreadsheet with data from the selected application
-            $sheet->setCellValue('A2', $application['appID']);
-            $sheet->setCellValue('B2', $application['email']);
-            $sheet->setCellValue('C2', $application['catnum']);
-            $sheet->setCellValue('D2', $application['specname']);
-            $sheet->setCellValue('E2', $application['location']);
-            $sheet->setCellValue('F2', $application['examination']);
-            $sheet->setCellValue('G2', $application['material']);
-            $sheet->setCellValue('H2', $application['workmeth']);
-            $sheet->setCellValue('I2', $application['inspectname']);
-            $sheet->setCellValue('J2', $application['remarks']);
-
-            // Convert condition code to human-readable format
-            $condition = '';
-            switch ($application['speccond']) {
-                case 0:
-                    $condition = 'New';
-                    break;
-                case 1:
-                    $condition = 'Used';
-                    break;
-                case 2:
-                    $condition = 'Damaged';
-                    break;
-                default:
-                    $condition = 'Unknown';
-                    break;
+            if ($stmt->execute()) {
+                echo "Application accepted successfully.";
+            } else {
+                echo "Error: Unable to accept the application.";
             }
-            $sheet->setCellValue('K2', $condition);
+        } elseif (isset($_POST['rejectApp'])) {
+            // Handle Reject action
+            $query = "UPDATE application SET status = 2 WHERE appID = :appID";
+            $stmt = $pdo->prepare($query);
+            $stmt->bindParam(':appID', $appID, PDO::PARAM_INT);
 
-            // Set proper headers for Excel file download
-            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            header('Content-Disposition: attachment; filename="application_' . $appID . '.xlsx"');
-            header('Cache-Control: max-age=0');
-            header('Expires: 0');
-            header('Pragma: public');
+            if ($stmt->execute()) {
+                echo "Application rejected successfully.";
+            } else {
+                echo "Error: Unable to reject the application.";
+            }
+        } elseif (isset($_POST['export'])) {
+            $appID = $_POST['appID'];
+            try {
+                // Start with clean output buffer
+                if (ob_get_level()) {
+                    ob_end_clean();
+                }
 
-            // Save the file to output
-            $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
-            $writer->save('php://output');
+                // Prepare the query to fetch the data for the specific application
+                $query = "SELECT * FROM application WHERE appID = :appID";
+                $stmt = $pdo->prepare($query);
+                $stmt->bindParam(':appID', $appID, PDO::PARAM_STR);  // Using PDO::PARAM_STR as appID is a string
+                $stmt->execute();
 
-            // Clear the output buffer after writing the file
-            ob_end_flush();  // This ensures the script completes, but the website can continue displaying
-        } else {
-            // If no application found
-            throw new Exception('No application found with the provided appID.');
+                // Fetch the record for the selected application
+                $application = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                // Check if the application exists
+                if ($application) {
+                    // Create a new Spreadsheet
+                    $spreadsheet = new Spreadsheet();
+                    $sheet = $spreadsheet->getActiveSheet();
+
+                    // Set column headers
+                    $sheet->setCellValue('A1', 'App ID');
+                    $sheet->setCellValue('B1', 'Email');
+                    $sheet->setCellValue('C1', 'Category Number');
+                    $sheet->setCellValue('D1', 'Specimen Name');
+                    $sheet->setCellValue('E1', 'Location');
+                    $sheet->setCellValue('F1', 'Examination');
+                    $sheet->setCellValue('G1', 'Material');
+                    $sheet->setCellValue('H1', 'Work Method');
+                    $sheet->setCellValue('I1', 'Inspector Name');
+                    $sheet->setCellValue('J1', 'Remarks');
+                    $sheet->setCellValue('K1', 'Condition');
+
+                    // Populate the spreadsheet with data from the selected application
+                    $sheet->setCellValue('A2', $application['appID']);
+                    $sheet->setCellValue('B2', $application['email']);
+                    $sheet->setCellValue('C2', $application['catnum']);
+                    $sheet->setCellValue('D2', $application['specname']);
+                    $sheet->setCellValue('E2', $application['location']);
+                    $sheet->setCellValue('F2', $application['examination']);
+                    $sheet->setCellValue('G2', $application['material']);
+                    $sheet->setCellValue('H2', $application['workmeth']);
+                    $sheet->setCellValue('I2', $application['inspectname']);
+                    $sheet->setCellValue('J2', $application['remarks']);
+                    $sheet->setCellValue('K2', $application['speccond']);
+
+                    // Set proper headers for Excel file download
+                    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                    header('Content-Disposition: attachment; filename="application_' . $appID . '.xlsx"');
+                    header('Cache-Control: max-age=0');
+                    header('Expires: 0');
+                    header('Pragma: public');
+
+                    // Save the file to output
+                    $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+                    $writer->save('php://output');
+
+                    // Clear the output buffer after writing the file
+                    ob_end_flush();  // This ensures the script completes, but the website can continue displaying
+                } else {
+                    // If no application found
+                    throw new Exception('No application found with the provided appID.');
+                }
+            } catch (Exception $e) {
+                // Handle errors
+                if (ob_get_level()) {
+                    ob_end_clean();
+                }
+                header('Content-Type: text/plain');
+                echo "Error: " . $e->getMessage();
+            }
         }
-    } catch (Exception $e) {
-        // Handle errors
-        if (ob_get_level()) {
-            ob_end_clean();
-        }
-        header('Content-Type: text/plain');
-        echo "Error: " . $e->getMessage();
+    } else {
+        echo "Error: Application ID not provided.";
     }
 }
 ?>
@@ -140,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Medianest</title>
+    <title>Specimen Conservation</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -206,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
                 <!-- start main content section -->
                 <ul class="flex space-x-2 rtl:space-x-reverse p-6">
                     <li>
-                        <a href="javascript:;" class="text-primary hover:underline">Dashboard</a>
+                        <a href="index.php" class="text-primary hover:underline">Main</a>
                     </li>
                     <li class="before:content-['/'] ltr:before:mr-1 rtl:before:ml-1">
                         <span>Admin</span>
@@ -253,15 +267,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
                                             <td class="px-4 py-2 text-sm"><?php echo htmlspecialchars($row['inspectname']); ?></td>
                                             <td class="px-4 py-2 text-sm">
                                                 <?php
-                                                // Placeholder status (You can update this logic later to fetch from a database or define status dynamically)
-                                                $status = "Pending"; // Default status
+                                                // Check the status value from the database
+                                                if (isset($row['status'])) {
+                                                    switch ($row['status']) {
+                                                        case 0:
+                                                            $status = "Pending";
+                                                            break;
+                                                        case 1:
+                                                            $status = "Accepted";
+                                                            break;
+                                                        case 2:
+                                                            $status = "Rejected";
+                                                            break;
+                                                        default:
+                                                            $status = "Unknown"; // Fallback for unexpected values
+                                                    }
+                                                } else {
+                                                    $status = "Pending"; // Default if the status column is missing or null
+                                                }
                                                 echo htmlspecialchars($status);
                                                 ?>
                                             </td>
                                             <td class="px-4 py-2 text-sm">
-                                                <form action="vgDashboard.php" method="post">
+                                                <form action="admin.php" method="post">
                                                     <input type="hidden" name="appID" value="<?php echo htmlspecialchars($row['appID']); ?>">
-                                                    <button type="submit" class="bg-blue-500 text-white p-2 rounded-md">Export</button>
+                                                    <button type="submit" name="export" class="bg-blue-500 text-white p-2 rounded-md">Export</button>
                                                 </form>
                                             </td>
                                         </tr>
@@ -283,14 +313,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
                                         <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
                                     </svg>
                                 </button>
-                                <form method="post" action="vgDashboard.php" class="space-y-5">
+                                <form method="post" action="admin.php" class="space-y-5">
+                                    <!-- Hidden inputs to pass data -->
                                     <input type="hidden" id="requestId" name="requestId" value="<?php echo htmlspecialchars($row['appID']); ?>" required />
                                     <input type="hidden" id="status" name="status" value="pending" required /> <!-- Example, adjust as needed -->
 
-                                    <!-- Submit Date (assumed to be part of the row, you may want to change it based on your table) -->
                                     <div class="flex flex-col sm:flex-row">
-                                        <label for="date" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Application ID</label>
-                                        <input id="date" name="date" type="text" value="<?php echo htmlspecialchars($row['appID']); ?>" placeholder="Submit Date" class="form-input flex-1" required disabled />
+                                        <label for="appID" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Application ID</label>
+                                        <input id="appID" name="appID" type="text" value="<?php echo htmlspecialchars($row['appID']); ?>" placeholder="Application ID" class="form-input flex-1" required disabled />
                                     </div>
 
                                     <!-- Email -->
@@ -323,15 +353,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
                                         <input id="examination" name="examination" type="text" value="<?php echo htmlspecialchars($row['examination']); ?>" placeholder="Enter Examination" class="form-input flex-1" required disabled />
                                     </div>
 
-                                    <!-- Specimen Condition (dropdown based on the `speccond` field in the database) -->
+                                    <!-- Examination -->
                                     <div class="flex flex-col sm:flex-row">
                                         <label for="speccond" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Specimen Condition</label>
-                                        <select id="speccond" name="speccond" class="form-input flex-1" required disabled>
-                                            <option value="0" <?php echo $row['speccond'] == 0 ? 'selected' : ''; ?>>New</option>
-                                            <option value="1" <?php echo $row['speccond'] == 1 ? 'selected' : ''; ?>>Used</option>
-                                            <option value="2" <?php echo $row['speccond'] == 2 ? 'selected' : ''; ?>>Damaged</option>
-                                            <option value="3" <?php echo $row['speccond'] == 3 ? 'selected' : ''; ?>>Unknown</option>
-                                        </select>
+                                        <input id="speccond" name="speccond" type="text" value="<?php echo htmlspecialchars($row['speccond']); ?>" placeholder="Enter Condition" class="form-input flex-1" required disabled />
                                     </div>
 
                                     <!-- Material -->
@@ -356,6 +381,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
                                     <div class="flex flex-col sm:flex-row">
                                         <label for="remarks" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Remarks</label>
                                         <textarea id="remarks" name="remarks" placeholder="Enter Remarks" class="form-input flex-1" required disabled><?php echo htmlspecialchars($row['remarks']); ?></textarea>
+                                    </div>
+                                    <div class="flex space-x-4">
+                                        <!-- Accept Button -->
+                                        <button id="accept-btn" type="submit" name="acceptApp" value="accept" class="btn btn-success text-white bg-green-500 hover:bg-green-600 p-2 rounded-md">
+                                            Accept
+                                        </button>
+                                        <!-- Reject Button -->
+                                        <button id="reject-btn" type="submit" name="rejectApp" value="reject" class="btn btn-danger text-white bg-red-500 hover:bg-red-600 p-2 rounded-md">
+                                            Reject
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -416,7 +451,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
             document.getElementById('remarks').value = rowData.remarks;
             document.getElementById('appID').value = rowData.appID; // Set the appID
 
-            // You can add conditions here to disable inputs or show/hide buttons based on your logic.
+            // Handle the status value
+            const status = rowData.status;
+            if (status == 0) {
+                // Show the "Accept" and "Reject" buttons if status is 0 (Pending)
+                document.getElementById('accept-btn').style.display = 'inline-block';
+                document.getElementById('reject-btn').style.display = 'inline-block';
+            } else {
+                // Hide the buttons for other statuses
+                document.getElementById('accept-btn').style.display = 'none';
+                document.getElementById('reject-btn').style.display = 'none';
+            }
         }
 
         function backBtn() {

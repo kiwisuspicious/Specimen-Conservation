@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Medianest</title>
+    <title>Specimen Conservation</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -206,10 +206,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
                 <!-- start main content section -->
                 <ul class="flex space-x-2 rtl:space-x-reverse p-6">
                     <li>
-                        <a href="javascript:;" class="text-primary hover:underline">Dashboard</a>
+                        <a href="index.php" class="text-primary hover:underline">Main</a>
                     </li>
                     <li class="before:content-['/'] ltr:before:mr-1 rtl:before:ml-1">
-                        <span>Admin</span>
+                        <span>Dashboard</span>
                     </li>
                 </ul>
                 <div x-data="sales" class="flex justify-center">

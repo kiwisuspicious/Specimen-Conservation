@@ -219,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div x-data="sales">
                     <ul class="flex space-x-2 rtl:space-x-reverse">
                         <li>
-                            <a href="index.php" class="text-primary hover:underline">Dashboard</a>
+                            <a href="index.php" class="text-primary hover:underline">Main</a>
                         </li>
                         <li class="before:content-['/'] ltr:before:mr-1 rtl:before:ml-1">
                             <span>Submit Report</span>
