@@ -6,8 +6,8 @@
                                 <a href="index.html" class="main-logo flex shrink-0 items-center">
                                    <!-- <img class="inline w-8 ltr:-ml-1 rtl:-mr-1" src="assets/images/logo.svg" alt="image" />-->
                                     <span
-                                        class="hidden align-middle text-2xl font-semibold transition-all duration-300 ltr:ml-1.5 rtl:mr-1.5 dark:text-white-light md:inline"
-                                        >Condition Report</span
+                                        class="hidden align-middle text-xl font-semibold transition-all duration-300 ltr:ml-1.5 rtl:mr-1.5 dark:text-white-light md:inline"
+                                        >Specimen Conservation</span
                                     >
                                 </a>
 

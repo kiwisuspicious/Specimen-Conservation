@@ -1,6 +1,43 @@
 <?php
 session_start();
+include('includes/config.php');
+$pdo = pdo_connect_mysql(); // Connect to smg database
+
+// Check if the form is submitted
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = isset($_POST['email']) ? trim($_POST['email']) : '';
+    $password = isset($_POST['password']) ? trim($_POST['password']) : '';
+
+    if (!empty($email) && !empty($password)) {
+        // Prepare and execute the query to find the user
+        $stmt = $pdo->prepare('SELECT * FROM adminuser WHERE email = :email');
+        $stmt->bindValue(':email', $email, PDO::PARAM_STR);
+        $stmt->execute();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) {
+            // Verify the password (assuming passwords are hashed)
+            if (password_verify($password, $user['password'])) {
+                // Set the session variables
+                $_SESSION['loggedin'] = true;
+                $_SESSION['email'] = $user['email'];
+                $_SESSION['id'] = $user['id'];
+
+                // Redirect to dashboard or another page
+                header('Location: admin.php');
+                exit;
+            } else {
+                $error = 'Incorrect password.';
+            }
+        } else {
+            $error = 'No user found with that email.';
+        }
+    } else {
+        $error = 'Please fill in both fields.';
+    }
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 
@@ -50,11 +87,7 @@ session_start();
         </template>
     </div>
 
-
-
     <div class="main-container min-h-screen text-black dark:text-white-dark" :class="[$store.app.navbar]">
-
-
         <div class="main-content flex min-h-screen flex-col">
 
             <?php include('includes/header.php'); ?>
@@ -63,32 +96,74 @@ session_start();
                 <?php include('includes/sidebar.php'); ?>
 
                 <!-- start main content section -->
-                <div class="flex justify-center items-center h-screen">
-                    <div x-data="sales" class="w-full max-w-lg">
-                        <!-- Each button in its own row -->
-                        <div class="flex flex-col mt-6 space-y-3">
-                            <a href="https://localhost/Specimen-Conservation/dashboard/submit-report.php" class="btn btn-info w-full">Submit Report</a>
-                            <a href="https://localhost/Specimen-Conservation/dashboard/submission.php" class="btn btn-warning w-full">Submission</a>
-                            <a href="https://localhost/Specimen-Conservation/dashboard/dashboard.php" class="btn btn-danger w-full">Dashboard</a>
+                <div x-data="sales">
+                    <ul class="flex space-x-2 rtl:space-x-reverse">
+                        <li>
+                            <a href="index.php" class="text-primary hover:underline">Dashboard</a>
+                        </li>
+                        <li class="before:content-['/'] ltr:before:mr-1 rtl:before:ml-1">
+                            <span>Admin Login</span>
+                        </li>
+                    </ul>
+                    <br>
+                    <br>
+                    <div class="flex justify-center items-center h-screen">
+                        <div class="panel w-full max-w-md shadow-lg rounded-lg bg-white p-6">
+                            <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Login</h2>
+                            <?php if (isset($error)): ?>
+                                <div class="bg-red-100 text-red-700 p-3 rounded mb-4">
+                                    <?= htmlspecialchars($error); ?>
+                                </div>
+                            <?php endif; ?>
+                            <form method="POST" action="admin-login.php" class="space-y-5">
+                                <!-- Email -->
+                                <div class="flex flex-col">
+                                    <label for="email" class="mb-2 text-sm font-medium text-gray-700">Email</label>
+                                    <input
+                                        id="email"
+                                        name="email"
+                                        type="text"
+                                        placeholder="Enter Email"
+                                        class="form-input rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2"
+                                        required />
+                                </div>
+                                <!-- Password -->
+                                <div class="flex flex-col">
+                                    <label for="password" class="mb-2 text-sm font-medium text-gray-700">Password</label>
+                                    <input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        placeholder="Enter Password"
+                                        class="form-input rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2"
+                                        required />
+                                </div>
+                                <!-- Submit Button -->
+                                <div class="flex justify-center">
+                                    <button
+                                        type="submit"
+                                        class="btn text-white bg-blue-500 hover:bg-blue-600 p-2 w-full rounded-md">
+                                        Login
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
                 <!-- end main content section -->
             </div>
-
-
             <!-- start footer section -->
-            <!-- end footer section -->
 
+            <!-- end footer section -->
         </div>
     </div>
-
     <script src="assets/js/alpine-collaspe.min.js"></script>
     <script src="assets/js/alpine-persist.min.js"></script>
     <script defer src="assets/js/alpine-ui.min.js"></script>
     <script defer src="assets/js/alpine-focus.min.js"></script>
     <script defer src="assets/js/alpine.min.js"></script>
     <script src="assets/js/custom.js"></script>
+    <script defer src="assets/js/apexcharts.js"></script>
 </body>
 
 </html>
