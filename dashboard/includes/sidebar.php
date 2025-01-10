@@ -23,16 +23,18 @@
                 </h2>
                 <li class="nav-item">
                     <ul>
-                        <li class="nav-item">
-                            <a href="https://localhost/Specimen-Conservation/dashboard/submit-report.php" class="group">
-                                <div class="flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7l4-4m0 0l4 4m-4-4v18" />
-                                    </svg>
-                                    <span class="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Submit Report</span>
-                                </div>
-                            </a>
-                        </li>
+                        <?php if (!isset($_SESSION['loggedin'])): ?>
+                            <li class="nav-item">
+                                <a href="https://localhost/Specimen-Conservation/dashboard/submit-report.php" class="group">
+                                    <div class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7l4-4m0 0l4 4m-4-4v18" />
+                                        </svg>
+                                        <span class="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Submit Report</span>
+                                    </div>
+                                </a>
+                            </li>
+                        <?php endif; ?>
                         <?php if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true): ?>
                             <li class="nav-item">
                                 <a href="https://localhost/Specimen-Conservation/dashboard/admin.php" class="group">
@@ -45,16 +47,18 @@
                                 </a>
                             </li>
                         <?php endif; ?>
-                        <li class="nav-item">
-                            <a href="https://localhost/Specimen-Conservation/dashboard/dashboard.php" class="group">
-                                <div class="flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" class="shrink-0 group-hover:!text-primary">
-                                        <path fill-rule="evenodd" clip-rule="evenodd" d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001m-.644.766a.5.5 0 0 0-.707 0L1.95 11.756l-.764 3.057 3.057-.764L14.44 3.854a.5.5 0 0 0 0-.708z" fill="currentColor" />
-                                    </svg>
-                                    <span class="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Dashboard</span>
-                                </div>
-                            </a>
-                        </li>
+                        <?php if (!isset($_SESSION['loggedin'])): ?>
+                            <li class="nav-item">
+                                <a href="https://localhost/Specimen-Conservation/dashboard/dashboard.php" class="group">
+                                    <div class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" class="shrink-0 group-hover:!text-primary">
+                                            <path fill-rule="evenodd" clip-rule="evenodd" d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001m-.644.766a.5.5 0 0 0-.707 0L1.95 11.756l-.764 3.057 3.057-.764L14.44 3.854a.5.5 0 0 0 0-.708z" fill="currentColor" />
+                                        </svg>
+                                        <span class="text-black ltr:pl-3 rtl:pr-3 dark:text-[#506690] dark:group-hover:text-white-dark">Dashboard</span>
+                                    </div>
+                                </a>
+                            </li>
+                        <?php endif; ?>
                         <?php if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true): ?>
                             <!-- Show Sign Out if logged in -->
                             <li class="nav-item">

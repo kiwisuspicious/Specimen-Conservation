@@ -1,7 +1,13 @@
 <?php
 session_start();
+// Check if the user is not logged in
+if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
+    // Redirect to the login page if not logged in
+    header('Location: admin-login.php');
+    exit;
+}
 include('includes/config.php');
-$pdo = pdo_connect_mysql(); // Connect to smg database
+$pdo = pdo_connect_mysql(); 
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -23,13 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // $mail->setFrom('');
     // $mail->addAddress('');
     // $mail->isHTML(true);
-    // $mail->Subject = 'New Archive Request';
-    // $mail->Body = "Dear archive team,<br><br>" .  htmlspecialchars($_SESSION['name'], ENT_QUOTES, 'UTF-8') . " has submitted a new request inside MediaNest. Please login into <a href='https://localhost/vg/dashboard/index.php'>MediaNest</a> for more details.<br><br>
-
-    // Thank you.<br><br>
-
-    // Regards,<br>
-    // SMG MediaNest.";
+    // $mail->Subject = '';
+    // $mail->Body = ;
     // $mail->send();
 
     // Sanitize and validate inputs
@@ -82,10 +83,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Generate a unique appID
     $newAppID = generateAppID($pdo);
 
-    // Create folder for the appID
-    $appFolder = $targetDir . $newAppID;
+    // Create folder for the appID and subfolder 'Before'
+    $appFolder = $targetDir . $newAppID . "/Before";
     if (!file_exists($appFolder)) {
-        mkdir($appFolder, 0777, true); // Create folder with appID name
+        mkdir($appFolder, 0777, true); // Create folders with necessary permissions
     }
 
     // Array to store uploaded file paths (if needed for later use, not for DB)
@@ -96,10 +97,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!empty($_FILES['photos']['name'][0])) {
         $fileCount = count($_FILES['photos']['name']);
 
-        // Limit to 5 files
-        if ($fileCount > 5) {
-            die("Error: You can upload a maximum of 5 photos.");
-        }
+        // // Limit to 5 files
+        // if ($fileCount > 5) {
+        //     die("Error: You can upload a maximum of 5 photos.");
+        // }
 
         // Loop through uploaded files
         for ($i = 0; $i < $fileCount; $i++) {
@@ -108,9 +109,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Validate file type
             if (in_array(strtolower($fileType), $allowedTypes)) {
-                // Generate a unique file name
-                $uniqueFileName = uniqid('photo_', true) . '.' . $fileType;
-                $targetFilePath = $appFolder . '/' . $uniqueFileName;
+                // Generate a new file name in the desired format
+                $photoIndex = $i + 1; // Index starts at 1
+                $newFileName = "before_{$newAppID}_{$photoIndex}.{$fileType}";
+                $targetFilePath = $appFolder . '/' . $newFileName;
 
                 // Move uploaded file
                 if (move_uploaded_file($_FILES['photos']['tmp_name'][$i], $targetFilePath)) {
@@ -123,6 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
 
     // Database interaction to insert the new record without file paths
     try {
@@ -147,6 +150,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':remarks'     => $remarks,
             ':appID'       => $newAppID
         ]);
+
+        // Redirect to the same page after form submission
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit;
     } catch (PDOException $e) {
         echo "Error: " . $e->getMessage();
     }
@@ -231,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="panel w-full lg:w-2/3 shadow-lg rounded-lg">
                             <div id="form-container">
                                 <div class="mb-5">
-                                    <form method="POST" action="submit-archives.php" enctype="multipart/form-data" class="space-y-5">
+                                    <form method="POST" action="submit-report.php" enctype="multipart/form-data" class="space-y-5">
                                         <!-- Catalogue Number -->
                                         <div class="flex flex-col sm:flex-row">
                                             <label for="catalogueNum" class="mb-2 sm:w-1/4 text-sm font-medium">Catalogue Number</label>
@@ -380,8 +387,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                         <!-- Photo of Specimen -->
                                         <div class="flex flex-col sm:flex-row">
-                                            <label for="photos" class="mb-2 sm:w-1/4 text-sm font-medium">Photo of Specimen (Max 5)</label>
-                                            <input type="file" id="photos" name="photos[]" class="form-input flex-1 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" multiple accept=".jpg, .jpeg, .png, .gif">
+                                            <label for="photos" class="mb-2 sm:w-1/4 text-sm font-medium">Photo of Specimen</label>
+                                            <input type="file" id="photos" name="photos[]" class="form-input flex-1 p-2" multiple accept=".jpg, .jpeg, .png, .gif">
                                         </div>
 
                                         <!-- Inspector (Dropdown Menu) -->

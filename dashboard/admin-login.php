@@ -1,7 +1,13 @@
 <?php
 session_start();
+// Check if the user is not logged in
+if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
+    // Redirect to the login page if not logged in
+    header('Location: admin.php');
+    exit;
+}
 include('includes/config.php');
-$pdo = pdo_connect_mysql(); // Connect to smg database
+$pdo = pdo_connect_mysql();
 
 // Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

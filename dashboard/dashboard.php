@@ -1,14 +1,17 @@
 <?php
 session_start();
-// Include config file
+// Check if the user is not logged in
+if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
+    // Redirect to the login page if not logged in
+    header('Location: admin.php');
+    exit;
+}
+
 include('includes/config.php');
 require '../vendor/autoload.php'; // Include PhpSpreadsheet
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-
-// Connect to the database using PDO
-$pdo = pdo_connect_mysql(); // This returns a PDO object
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -17,44 +20,42 @@ require 'PHPMailer/src/Exception.php';
 require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
 
-// Remove search logic and directly fetch all application records
+// Connect to the database using PDO
+$pdo = pdo_connect_mysql(); // This returns a PDO object
+
+// Fetch all the records from the database
 $query = "SELECT * FROM application";
 $stmt = $pdo->prepare($query);
 $stmt->execute();
-
-// Fetch all the records from the database
 $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch the application record based on the appID or other identifier
-// (You can keep this query if it's needed for fetching details based on appID)
-$query = "SELECT * FROM application WHERE appID = :appID";
-$stmt = $pdo->prepare($query);
-$stmt->bindParam(':appID', $appID, PDO::PARAM_INT);
-$stmt->execute();
-$row = $stmt->fetch(PDO::FETCH_ASSOC);
+// Fetch the application record based on the appID (when uploading or exporting)
+if (isset($_POST['appID'])) {
+    $appID = $_POST['appID'];
+    $query = "SELECT * FROM application WHERE appID = :appID";
+    $stmt = $pdo->prepare($query);
+    $stmt->bindParam(':appID', $appID, PDO::PARAM_INT);
+    $stmt->execute();
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+}
 
-// Fetch the appID from POST request (for the specific application to be exported)
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
+// Handle application export (without file upload)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_export'])) {
+    // This part will handle export logic when no files are uploaded
     $appID = $_POST['appID'];
 
     try {
-        // Start with clean output buffer
         if (ob_get_level()) {
             ob_end_clean();
         }
 
-        // Prepare the query to fetch the data for the specific application
         $query = "SELECT * FROM application WHERE appID = :appID";
         $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':appID', $appID, PDO::PARAM_STR);  // Using PDO::PARAM_STR as appID is a string
+        $stmt->bindParam(':appID', $appID, PDO::PARAM_STR);
         $stmt->execute();
-
-        // Fetch the record for the selected application
         $application = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Check if the application exists
         if ($application) {
-            // Create a new Spreadsheet
             $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
 
@@ -65,61 +66,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
             $sheet->setCellValue('D1', 'Specimen Name');
             $sheet->setCellValue('E1', 'Location');
             $sheet->setCellValue('F1', 'Examination');
-            $sheet->setCellValue('G1', 'Material');
-            $sheet->setCellValue('H1', 'Work Method');
-            $sheet->setCellValue('I1', 'Inspector Name');
-            $sheet->setCellValue('J1', 'Remarks');
-            $sheet->setCellValue('K1', 'Condition');
+            $sheet->setCellValue('G1', 'Condition');
+            $sheet->setCellValue('H1', 'Material');
+            $sheet->setCellValue('I1', 'Work Method');
+            $sheet->setCellValue('J1', 'Inspector Name');
+            $sheet->setCellValue('K1', 'Remarks');
 
-            // Populate the spreadsheet with data from the selected application
             $sheet->setCellValue('A2', $application['appID']);
             $sheet->setCellValue('B2', $application['email']);
             $sheet->setCellValue('C2', $application['catnum']);
             $sheet->setCellValue('D2', $application['specname']);
             $sheet->setCellValue('E2', $application['location']);
             $sheet->setCellValue('F2', $application['examination']);
-            $sheet->setCellValue('G2', $application['material']);
-            $sheet->setCellValue('H2', $application['workmeth']);
-            $sheet->setCellValue('I2', $application['inspectname']);
-            $sheet->setCellValue('J2', $application['remarks']);
+            $sheet->setCellValue('G2', $application['speccond']);
+            $sheet->setCellValue('H2', $application['material']);
+            $sheet->setCellValue('I2', $application['workmeth']);
+            $sheet->setCellValue('J2', $application['inspectname']);
+            $sheet->setCellValue('K2', $application['remarks']);
 
-            // Convert condition code to human-readable format
-            $condition = '';
-            switch ($application['speccond']) {
-                case 0:
-                    $condition = 'New';
-                    break;
-                case 1:
-                    $condition = 'Used';
-                    break;
-                case 2:
-                    $condition = 'Damaged';
-                    break;
-                default:
-                    $condition = 'Unknown';
-                    break;
-            }
-            $sheet->setCellValue('K2', $condition);
-
-            // Set proper headers for Excel file download
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment; filename="application_' . $appID . '.xlsx"');
             header('Cache-Control: max-age=0');
             header('Expires: 0');
             header('Pragma: public');
 
-            // Save the file to output
             $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
             $writer->save('php://output');
-
-            // Clear the output buffer after writing the file
-            ob_end_flush();  // This ensures the script completes, but the website can continue displaying
+            ob_end_flush();
         } else {
-            // If no application found
             throw new Exception('No application found with the provided appID.');
         }
     } catch (Exception $e) {
-        // Handle errors
         if (ob_get_level()) {
             ob_end_clean();
         }
@@ -225,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
                             <!-- Table displaying application records -->
                             <table id="myTable" class="min-w-full table-auto">
                                 <thead>
-                                    <tr class="bg-gray-800"> <!-- Updated the background color for a dark header -->
+                                    <tr class="bg-gray-800">
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">No.</th>
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">App ID</th>
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">Category Number</th>
@@ -233,6 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">Inspector Name</th>
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">Application Status</th>
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">Export</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-white">Print</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -241,28 +219,52 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
                                     $count = 1;
                                     foreach ($applications as $row) :
                                     ?>
-                                        <tr onclick='showForm(<?php echo json_encode($row, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>)' class="group text-white hover:text-black dark:hover:text-white-light/90">
+                                        <tr class="group text-white hover:text-black dark:hover:text-white-light/90">
                                             <td class="px-4 py-2 text-sm">
                                                 <div class="flex items-center">
                                                     <span class="whitespace-nowrap"><?php echo $count; ?></span>
                                                 </div>
                                             </td>
-                                            <td class="px-4 py-2 text-sm"><?php echo htmlspecialchars($row['appID']); ?></td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <button onclick="showForm('<?php echo htmlspecialchars($row['appID']); ?>')" class="bg-green-500 text-white p-2 rounded-md"><?php echo htmlspecialchars($row['appID']); ?></button>
+                                            </td>
                                             <td class="px-4 py-2 text-sm"><?php echo htmlspecialchars($row['catnum']); ?></td>
                                             <td class="px-4 py-2 text-sm"><?php echo htmlspecialchars($row['specname']); ?></td>
                                             <td class="px-4 py-2 text-sm"><?php echo htmlspecialchars($row['inspectname']); ?></td>
                                             <td class="px-4 py-2 text-sm">
                                                 <?php
-                                                // Placeholder status (You can update this logic later to fetch from a database or define status dynamically)
-                                                $status = "Pending"; // Default status
+                                                // Check the status value from the database
+                                                if (isset($row['status'])) {
+                                                    switch ($row['status']) {
+                                                        case 0:
+                                                            $status = "Pending";
+                                                            break;
+                                                        case 1:
+                                                            $status = "Accepted";
+                                                            break;
+                                                        case 2:
+                                                            $status = "Rejected";
+                                                            break;
+                                                        case 3:
+                                                            $status = "Completed";
+                                                            break;
+                                                        default:
+                                                            $status = "Unknown"; // Fallback for unexpected values
+                                                    }
+                                                } else {
+                                                    $status = "Pending"; // Default if the status column is missing or null
+                                                }
                                                 echo htmlspecialchars($status);
                                                 ?>
                                             </td>
                                             <td class="px-4 py-2 text-sm">
-                                                <form action="vgDashboard.php" method="post">
+                                                <form action="dashboard.php" method="post">
                                                     <input type="hidden" name="appID" value="<?php echo htmlspecialchars($row['appID']); ?>">
-                                                    <button type="submit" class="bg-blue-500 text-white p-2 rounded-md">Export</button>
+                                                    <button type="submit" name="submit_export" class="bg-blue-500 text-white p-2 rounded-md">Export</button>
                                                 </form>
+                                            </td>
+                                            <td class="px-4 py-2 text-sm">
+                                                <button onclick="printPage('<?php echo htmlspecialchars($row['appID']); ?>')" class="bg-green-500 text-white p-2 rounded-md">Print</button>
                                             </td>
                                         </tr>
                                     <?php
@@ -271,160 +273,56 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['appID'])) {
                                     ?>
                                 </tbody>
                             </table>
-
                             <br>
                         </div>
-
-                        <br>
-                        <div id="form-container" style="display: none">
-                            <div class="mb-5">
-                                <button id="back-button" onclick="backBtn()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
-                                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8" />
-                                    </svg>
-                                </button>
-                                <form method="post" action="vgDashboard.php" class="space-y-5">
-                                    <input type="hidden" id="requestId" name="requestId" value="<?php echo htmlspecialchars($row['appID']); ?>" required />
-                                    <input type="hidden" id="status" name="status" value="pending" required /> <!-- Example, adjust as needed -->
-
-                                    <!-- Submit Date (assumed to be part of the row, you may want to change it based on your table) -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="date" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Application ID</label>
-                                        <input id="date" name="date" type="text" value="<?php echo htmlspecialchars($row['appID']); ?>" placeholder="Submit Date" class="form-input flex-1" required disabled />
-                                    </div>
-
-                                    <!-- Email -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="email" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Email</label>
-                                        <input id="email" name="email" type="text" value="<?php echo htmlspecialchars($row['email']); ?>" placeholder="Enter Email" class="form-input flex-1" required disabled />
-                                    </div>
-
-                                    <!-- Category Number -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="catnum" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Category Number</label>
-                                        <input id="catnum" name="catnum" type="text" value="<?php echo htmlspecialchars($row['catnum']); ?>" placeholder="Enter Category Number" class="form-input flex-1" required disabled />
-                                    </div>
-
-                                    <!-- Specimen Name -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="specname" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Specimen Name</label>
-                                        <input id="specname" name="specname" type="text" value="<?php echo htmlspecialchars($row['specname']); ?>" placeholder="Enter Specimen Name" class="form-input flex-1" required disabled />
-                                    </div>
-
-                                    <!-- Location -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="location" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Location</label>
-                                        <input id="location" name="location" type="text" value="<?php echo htmlspecialchars($row['location']); ?>" placeholder="Enter Location" class="form-input flex-1" required disabled />
-                                    </div>
-
-                                    <!-- Examination -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="examination" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Examination</label>
-                                        <input id="examination" name="examination" type="text" value="<?php echo htmlspecialchars($row['examination']); ?>" placeholder="Enter Examination" class="form-input flex-1" required disabled />
-                                    </div>
-
-                                    <!-- Specimen Condition (dropdown based on the `speccond` field in the database) -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="speccond" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Specimen Condition</label>
-                                        <select id="speccond" name="speccond" class="form-input flex-1" required disabled>
-                                            <option value="0" <?php echo $row['speccond'] == 0 ? 'selected' : ''; ?>>New</option>
-                                            <option value="1" <?php echo $row['speccond'] == 1 ? 'selected' : ''; ?>>Used</option>
-                                            <option value="2" <?php echo $row['speccond'] == 2 ? 'selected' : ''; ?>>Damaged</option>
-                                            <option value="3" <?php echo $row['speccond'] == 3 ? 'selected' : ''; ?>>Unknown</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Material -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="material" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Material</label>
-                                        <input id="material" name="material" type="text" value="<?php echo htmlspecialchars($row['material']); ?>" placeholder="Enter Material" class="form-input flex-1" required disabled />
-                                    </div>
-
-                                    <!-- Work Method -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="workmeth" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Work Method</label>
-                                        <textarea id="workmeth" name="workmeth" placeholder="Enter Work Method" class="form-input flex-1" required disabled><?php echo htmlspecialchars($row['workmeth']); ?></textarea>
-                                    </div>
-
-                                    <!-- Inspector Name -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="inspectname" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Inspector Name</label>
-                                        <input id="inspectname" name="inspectname" type="text" value="<?php echo htmlspecialchars($row['inspectname']); ?>" placeholder="Enter Inspector Name" class="form-input flex-1" required disabled />
-                                    </div>
-
-                                    <!-- Remarks -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="remarks" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Remarks</label>
-                                        <textarea id="remarks" name="remarks" placeholder="Enter Remarks" class="form-input flex-1" required disabled><?php echo htmlspecialchars($row['remarks']); ?></textarea>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
                     </div>
+                    <br>
+                    <!-- end main content section -->
                 </div>
-                <br>
-                <!-- end main content section -->
+
+                <!-- start footer section -->
+                <!-- end footer section -->
             </div>
-
-            <!-- start footer section -->
-            <!-- <div class="mt-auto p-6 pt-0 text-center dark:text-white-dark ltr:sm:text-left rtl:sm:text-right">
-                © <span id="footer-year">2024</span>. Sarawak Media Group All rights reserved.
-            </div> -->
-            <!-- end footer section -->
         </div>
-    </div>
 
-    <script src="assets/js/alpine-collaspe.min.js"></script>
-    <script src="assets/js/alpine-persist.min.js"></script>
-    <script defer src="assets/js/alpine-ui.min.js"></script>
-    <script defer src="assets/js/alpine-focus.min.js"></script>
-    <script defer src="assets/js/alpine.min.js"></script>
-    <script src="assets/js/custom.js"></script>
-    <script defer src="assets/js/apexcharts.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+        <script src="assets/js/alpine-collaspe.min.js"></script>
+        <script src="assets/js/alpine-persist.min.js"></script>
+        <script defer src="assets/js/alpine-ui.min.js"></script>
+        <script defer src="assets/js/alpine-focus.min.js"></script>
+        <script defer src="assets/js/alpine.min.js"></script>
+        <script src="assets/js/custom.js"></script>
+        <script defer src="assets/js/apexcharts.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+        <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
 
-    <script>
-        $(document).ready(function() {
-            var dataTable = $('#myTable').DataTable({
-                "lengthMenu": [
-                    [10],
-                    [10]
-                ], // Set the length menu to only display 10 entries
-                "paging": true, // Enable pagination
-                "searching": true, // Enable searching
+        <script>
+            $(document).ready(function() {
+                var dataTable = $('#myTable').DataTable({
+                    "lengthMenu": [
+                        [10],
+                        [10]
+                    ], // Set length menu to display 10 entries
+                    "paging": true, // Enable pagination
+                    "searching": true, // Enable searching
+                });
+
+                window.backBtn = function() {
+                    document.getElementById('form-container').style.display = 'none';
+                    document.getElementById('submission-records').style.display = 'block';
+                };
             });
-            // $('.dataTables_filter').hide();
-        });
 
-        function showForm(rowData) {
-            // Make sure the form is displayed
-            document.getElementById('form-container').style.display = 'block';
-            document.getElementById('submission-records').style.display = 'none';
+            function showForm(appID) {
+                const url = `app-page.php?appID=${appID}`;
+                window.location.href = url;
+            }
 
-            // Populate form fields with the data from the clicked row
-            document.getElementById('email').value = rowData.email;
-            document.getElementById('catnum').value = rowData.catnum;
-            document.getElementById('specname').value = rowData.specname;
-            document.getElementById('location').value = rowData.location;
-            document.getElementById('examination').value = rowData.examination;
-            document.getElementById('speccond').value = rowData.speccond;
-            document.getElementById('material').value = rowData.material;
-            document.getElementById('workmeth').value = rowData.workmeth;
-            document.getElementById('inspectname').value = rowData.inspectname;
-            document.getElementById('remarks').value = rowData.remarks;
-            document.getElementById('appID').value = rowData.appID; // Set the appID
-
-            // You can add conditions here to disable inputs or show/hide buttons based on your logic.
-        }
-
-        function backBtn() {
-            document.getElementById('form-container').style.display = 'none';
-            document.getElementById('submission-records').style.display = 'block';
-            document.getElementById('selectedTagsContainerForm').innerHTML = ''; // Empty the div
-        }
-    </script>
+            function printPage(appID) {
+                const url = `print-page.php?appID=${appID}`;
+                window.location.href = url;
+            }
+        </script>
 </body>
 
 </html>
