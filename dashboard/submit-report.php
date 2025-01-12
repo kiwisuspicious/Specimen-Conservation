@@ -21,12 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // $mail->isSMTP();
     // $mail->Host = 'smtp.gmail.com';
     // $mail->SMTPAuth = true;
-    // $mail->Username = 'faiq2001@gmail.com';
-    // $mail->Password = 'ljdi vrbr xamj rnyu';
+    // $mail->Username = '';
+    // $mail->Password = '';
     // $mail->SMTPSecure = 'ssl';
     // $mail->Port = 465;
-    // $mail->setFrom('faiq2001@gmail.com');
-    // $mail->addAddress('muhammadfaiqmohammad@gmail.com');
+    // $mail->setFrom('');
+    // $mail->addAddress('');
     // $mail->isHTML(true);
     // $mail->Subject = 'donotreply - Pre-Specimen Conservation Report';
     // $mail->Body = 'Pending Approval(Bold)(br) Application ID: SCR1234 (br) Submitted On: 12/12/2024 (br) Inspector Name: Alexson (br) View Report Details: (Link Website)';

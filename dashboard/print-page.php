@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Application Report</title>
+    <link rel="icon" type="image/x-icon" href="favicon.png" />
+    <title>Specimen Conservation Report</title>
     <style>
         /* General styles */
         body {
