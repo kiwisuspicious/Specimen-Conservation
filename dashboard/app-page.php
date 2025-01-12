@@ -31,7 +31,6 @@ if (!empty($appID)) {
 
     if ($row) {
         // Extract fields from the application row
-        $email = $row['email'];
         $catnum = $row['catnum'];
         $specname = $row['specname'];
         $location = $row['location'];
@@ -200,12 +199,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploadImage']) && !e
                                         <input id="appliID" name="appliID" type="text" value="<?php echo $appID; ?>" class="form-input flex-1" required disabled />
                                     </div>
 
-                                    <!-- Email -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="email" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Email</label>
-                                        <input id="email" name="email" type="text" value="<?php echo htmlspecialchars($email); ?>" class="form-input flex-1" required disabled />
-                                    </div>
-
                                     <!-- Category Number -->
                                     <div class="flex flex-col sm:flex-row">
                                         <label for="catnum" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Category Number</label>
@@ -233,7 +226,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploadImage']) && !e
                                     <!-- Specimen Condition -->
                                     <div class="flex flex-col sm:flex-row">
                                         <label for="speccond" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Specimen Condition</label>
-                                        <input id="speccond" name="speccond" type="text" value="<?php echo htmlspecialchars($speccond); ?>" class="form-input flex-1" required disabled />
+                                        <input
+                                            id="speccond"
+                                            name="speccond"
+                                            type="text"
+                                            value="<?php
+                                                    // Check the specimen condition value and assign a description
+                                                    if (isset($speccond)) {
+                                                        switch ($speccond) {
+                                                            case 3:
+                                                                $condition = "Excellent";
+                                                                break;
+                                                            case 2:
+                                                                $condition = "Good";
+                                                                break;
+                                                            case 1:
+                                                                $condition = "Fair";
+                                                                break;
+                                                            case 0:
+                                                                $condition = "Poor";
+                                                                break;
+                                                            default:
+                                                                $condition = "Unknown condition"; // Fallback for unexpected values
+                                                        }
+                                                    } else {
+                                                        $condition = "Unknown condition"; // Default if the condition is missing or null
+                                                    }
+                                                    echo htmlspecialchars($condition);
+                                                    ?>"
+                                            class="form-input flex-1"
+                                            required
+                                            disabled />
                                     </div>
 
                                     <!-- Material -->
@@ -321,19 +344,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploadImage']) && !e
                                         <!-- Submit Button to trigger image upload -->
                                         <div>
                                             <form action="" method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row mt-4">
+
                                                 <label for="uploadImage[]" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">After Image</label>
                                                 <input type="file" name="uploadImage[]" id="uploadImage" multiple class="form-input flex-1" accept=".jpg, .jpeg, .png, .gif" />
                                                 <input type="hidden" name="formID" id="formID" value="<?php echo $appID; ?>" />
-                                                <button type="submit" name="submit_image" class="text-white font-medium py-2 px-4">
+                                                <button type="button" name="submit_image" class="text-white font-medium py-2 px-4" onclick="openUploadModal()">
                                                     Upload Image
                                                 </button>
+
+                                                <div id="uploadModal" class="fixed top-0 left-0 w-full h-full hidden z-50 flex justify-center items-center" style="background-color: rgba(0, 0, 0, 0.6);">
+                                                    <div class="relative bg-black text-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                                                        <div class="mb-6">
+                                                            <h2 class="text-xl font-semibold text-white">Confirm Upload?</h2>
+                                                        </div>
+
+                                                        <div class="flex justify-center gap-10 mt-6">
+                                                            <button type="button" id="cancelSubmitBtn" class="btn btn-success text-white rounded-md" onclick="closeUploadModal()">Cancel</button>
+                                                            <button type="submit" id="confirmSubmit" name="confirmSubmit" class="btn btn-primary text-white rounded-md w-32 h-10">Upload Image</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </form>
                                         </div>
                                     <?php endif; ?>
                                 </div>
                             </div>
                         </div>
-
                     </div>
                     <br>
                     <!-- end main content section -->
@@ -385,6 +421,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['uploadImage']) && !e
                     window.location.href = 'dashboard.php';
                 };
             });
+
+            function openUploadModal() {
+                document.getElementById('uploadModal').style.display = 'flex';
+            }
+
+            function closeUploadModal() {
+                document.getElementById('uploadModal').style.display = 'none';
+            }
         </script>
 
 </body>

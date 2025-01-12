@@ -12,6 +12,9 @@ require '../vendor/autoload.php'; // Include PhpSpreadsheet
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Style\Color;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -23,11 +26,12 @@ require 'PHPMailer/src/SMTP.php';
 // Connect to the database using PDO
 $pdo = pdo_connect_mysql(); // This returns a PDO object
 
-// Fetch all the records from the database
-$query = "SELECT * FROM application";
+// Fetch all the records from the database and order by status in ascending order
+$query = "SELECT * FROM application ORDER BY status ASC";
 $stmt = $pdo->prepare($query);
 $stmt->execute();
 $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 
 // Fetch the application record based on the appID (when uploading or exporting)
 if (isset($_POST['appID'])) {
@@ -61,28 +65,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_export'])) {
 
             // Set column headers
             $sheet->setCellValue('A1', 'App ID');
-            $sheet->setCellValue('B1', 'Email');
-            $sheet->setCellValue('C1', 'Category Number');
-            $sheet->setCellValue('D1', 'Specimen Name');
-            $sheet->setCellValue('E1', 'Location');
-            $sheet->setCellValue('F1', 'Examination');
-            $sheet->setCellValue('G1', 'Condition');
-            $sheet->setCellValue('H1', 'Material');
-            $sheet->setCellValue('I1', 'Work Method');
-            $sheet->setCellValue('J1', 'Inspector Name');
-            $sheet->setCellValue('K1', 'Remarks');
+            $sheet->setCellValue('B1', 'Catalogue Number');
+            $sheet->setCellValue('C1', 'Specimen Name');
+            $sheet->setCellValue('D1', 'Location');
+            $sheet->setCellValue('E1', 'Examination');
+            $sheet->setCellValue('F1', 'Condition');
+            $sheet->setCellValue('G1', 'Material');
+            $sheet->setCellValue('H1', 'Work Method');
+            $sheet->setCellValue('I1', 'Inspector Name');
+            $sheet->setCellValue('J1', 'Remarks');
 
+            // Apply styling to the header row
+            $headerStyle = [
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'CCCCFF'], // Light blue background
+                ],
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => '000000'], // Black text
+                ],
+            ];
+            $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
+
+            // Map Condition field to text
+            $conditionMap = [
+                '1' => 'Poor',
+                '2' => 'Fair',
+                '3' => 'Good',
+                '4' => 'Excellent'
+            ];
+            $condition = isset($conditionMap[$application['speccond']]) ? $conditionMap[$application['speccond']] : 'Unknown';
+
+            // Set row values
             $sheet->setCellValue('A2', $application['appID']);
-            $sheet->setCellValue('B2', $application['email']);
-            $sheet->setCellValue('C2', $application['catnum']);
-            $sheet->setCellValue('D2', $application['specname']);
-            $sheet->setCellValue('E2', $application['location']);
-            $sheet->setCellValue('F2', $application['examination']);
-            $sheet->setCellValue('G2', $application['speccond']);
-            $sheet->setCellValue('H2', $application['material']);
-            $sheet->setCellValue('I2', $application['workmeth']);
-            $sheet->setCellValue('J2', $application['inspectname']);
-            $sheet->setCellValue('K2', $application['remarks']);
+            $sheet->setCellValue('B2', $application['catnum']);
+            $sheet->setCellValue('C2', $application['specname']);
+            $sheet->setCellValue('D2', $application['location']);
+            $sheet->setCellValue('E2', $application['examination']);
+            $sheet->setCellValue('F2', $condition); // Use the mapped condition text
+            $sheet->setCellValue('G2', $application['material']);
+            $sheet->setCellValue('H2', $application['workmeth']);
+            $sheet->setCellValue('I2', $application['inspectname']);
+            $sheet->setCellValue('J2', $application['remarks']);
+
+            // Apply alternating row colors for readability
+            $rowCount = 2; // Start from the second row
+            while (isset($application['row' . $rowCount])) { // Iterate through rows dynamically
+                $rowRange = 'A' . $rowCount . ':K' . $rowCount;
+
+                // Alternate row colors
+                if ($rowCount % 2 == 0) {
+                    $sheet->getStyle($rowRange)->getFill()->setFillType(Fill::FILL_SOLID)
+                        ->getStartColor()->setRGB('F2F2F2'); // Light gray background
+                } else {
+                    $sheet->getStyle($rowRange)->getFill()->setFillType(Fill::FILL_SOLID)
+                        ->getStartColor()->setRGB('FFFFFF'); // White background
+                }
+
+                $rowCount++;
+            }
+
+            // Auto-size columns for better readability
+            foreach (range('A', 'K') as $columnID) {
+                $sheet->getColumnDimension($columnID)->setAutoSize(true);
+            }
+
+            // // Path to the folder containing images
+            // $imageFolder = 'uploads/' . $application['appID'] . '/Before';
+
+            // // Check if the folder exists
+            // if (is_dir($imageFolder)) {
+            //     $images = glob($imageFolder . '/*.{jpg,jpeg,png,gif}', GLOB_BRACE); // Get all images in the folder
+            //     $currentRow = 2; // Start from row 2
+
+            //     foreach ($images as $imagePath) {
+            //         if (file_exists($imagePath)) {
+            //             $drawing = new Drawing();
+            //             $drawing->setName('Image');
+            //             $drawing->setDescription('Image from folder');
+            //             $drawing->setPath($imagePath); // Set the image path
+            //             $drawing->setHeight(100); // Adjust the image height
+            //             $drawing->setCoordinates('L' . $currentRow); // Insert the image in column L
+            //             $drawing->setWorksheet($sheet); // Attach the image to the worksheet
+            //         }
+            //         $currentRow++; // Move to the next row for the next image
+            //     }
+            // }
 
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             header('Content-Disposition: attachment; filename="application_' . $appID . '.xlsx"');
@@ -95,6 +164,111 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_export'])) {
             ob_end_flush();
         } else {
             throw new Exception('No application found with the provided appID.');
+        }
+    } catch (Exception $e) {
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        header('Content-Type: text/plain');
+        echo "Error: " . $e->getMessage();
+    }
+}
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['export_complete'])) {
+    try {
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Query to get all applications with status = 3 (Completed)
+        $query = "SELECT * FROM application WHERE status = 3"; // Adjust to your table structure
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        $applications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if ($applications) {
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+
+            // Set column headers
+            $sheet->setCellValue('A1', 'App ID');
+            $sheet->setCellValue('B1', 'Catalogue Number');
+            $sheet->setCellValue('C1', 'Specimen Name');
+            $sheet->setCellValue('D1', 'Location');
+            $sheet->setCellValue('E1', 'Examination');
+            $sheet->setCellValue('F1', 'Condition');
+            $sheet->setCellValue('G1', 'Material');
+            $sheet->setCellValue('H1', 'Work Method Statement');
+            $sheet->setCellValue('I1', 'Inspector Name');
+            $sheet->setCellValue('J1', 'Remarks');
+
+            // Apply styling to the header row
+            $headerStyle = [
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => 'CCCCFF'], // Light blue background
+                ],
+                'font' => [
+                    'bold' => true,
+                    'color' => ['rgb' => '000000'], // Black text
+                ],
+            ];
+            $sheet->getStyle('A1:K1')->applyFromArray($headerStyle);
+
+            // Map Condition field to text
+            $conditionMap = [
+                '1' => 'Poor',
+                '2' => 'Fair',
+                '3' => 'Good',
+                '4' => 'Excellent'
+            ];
+
+            $rowNum = 2; // Start from row 2
+
+            // Populate rows with application data
+            foreach ($applications as $application) {
+                // Map the condition field
+                $condition = isset($conditionMap[$application['speccond']]) ? $conditionMap[$application['speccond']] : 'Unknown';
+
+                // Set row values
+                $sheet->setCellValue('A' . $rowNum, $application['appID']);
+                $sheet->setCellValue('B' . $rowNum, $application['catnum']);
+                $sheet->setCellValue('C' . $rowNum, $application['specname']);
+                $sheet->setCellValue('D' . $rowNum, $application['location']);
+                $sheet->setCellValue('E' . $rowNum, $application['examination']);
+                $sheet->setCellValue('F' . $rowNum, $condition);
+                $sheet->setCellValue('G' . $rowNum, $application['material']);
+                $sheet->setCellValue('H' . $rowNum, $application['workmeth']);
+                $sheet->setCellValue('I' . $rowNum, $application['inspectname']);
+                $sheet->setCellValue('J' . $rowNum, $application['remarks']);
+                // Apply alternating row colors
+                $rowRange = 'A' . $rowNum . ':K' . $rowNum;
+                if ($rowNum % 2 == 0) {
+                    $sheet->getStyle($rowRange)->getFill()->setFillType(Fill::FILL_SOLID)
+                        ->getStartColor()->setRGB('F2F2F2'); // Light gray background
+                } else {
+                    $sheet->getStyle($rowRange)->getFill()->setFillType(Fill::FILL_SOLID)
+                        ->getStartColor()->setRGB('FFFFFF'); // White background
+                }
+
+                $rowNum++;
+            }
+
+            // Auto-size columns for better readability
+            foreach (range('A', 'K') as $columnID) {
+                $sheet->getColumnDimension($columnID)->setAutoSize(true);
+            }
+
+            // Output the Excel file for download
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="completed_applications.xlsx"');
+            header('Cache-Control: max-age=0');
+            header('Expires: 0');
+            header('Pragma: public');
+
+            $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+            $writer->save('php://output');
+            ob_end_flush();
+            exit;
         }
     } catch (Exception $e) {
         if (ob_get_level()) {
@@ -205,9 +379,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_export'])) {
                                     <tr class="bg-gray-800">
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">No.</th>
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">App ID</th>
-                                        <th class="px-4 py-2 text-left text-sm font-medium text-white">Category Number</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-white">Catalogue Number</th>
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">Specimen Name</th>
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">Inspector Name</th>
+                                        <th class="px-4 py-2 text-left text-sm font-medium text-white">Date</th>
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">Application Status</th>
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">Export</th>
                                         <th class="px-4 py-2 text-left text-sm font-medium text-white">Print</th>
@@ -231,6 +406,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_export'])) {
                                             <td class="px-4 py-2 text-sm"><?php echo htmlspecialchars($row['catnum']); ?></td>
                                             <td class="px-4 py-2 text-sm"><?php echo htmlspecialchars($row['specname']); ?></td>
                                             <td class="px-4 py-2 text-sm"><?php echo htmlspecialchars($row['inspectname']); ?></td>
+                                            <td class="px-4 py-2 text-sm"><?php echo htmlspecialchars($row['submit_date']); ?></td>
                                             <td class="px-4 py-2 text-sm">
                                                 <?php
                                                 // Check the status value from the database
@@ -274,6 +450,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_export'])) {
                                 </tbody>
                             </table>
                             <br>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <form action="dashboard.php" method="post">
+                                <button type="submit" name="export_complete" class="bg-blue-500 text-white p-2 rounded-md">Export Complete</button>
+                            </form>
                         </div>
                     </div>
                     <br>

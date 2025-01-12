@@ -32,7 +32,6 @@ if (!empty($appID)) {
 
     if ($row) {
         // Extract fields from the application row
-        $email = $row['email'];
         $catnum = $row['catnum'];
         $specname = $row['specname'];
         $location = $row['location'];
@@ -202,12 +201,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <input id="appliID" name="appliID" type="text" value="<?php echo $appID; ?>" class="form-input flex-1" required disabled />
                                     </div>
 
-                                    <!-- Email -->
-                                    <div class="flex flex-col sm:flex-row">
-                                        <label for="email" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Email</label>
-                                        <input id="email" name="email" type="text" value="<?php echo htmlspecialchars($email); ?>" class="form-input flex-1" required disabled />
-                                    </div>
-
                                     <!-- Category Number -->
                                     <div class="flex flex-col sm:flex-row">
                                         <label for="catnum" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Category Number</label>
@@ -235,7 +228,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <!-- Specimen Condition -->
                                     <div class="flex flex-col sm:flex-row">
                                         <label for="speccond" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Specimen Condition</label>
-                                        <input id="speccond" name="speccond" type="text" value="<?php echo htmlspecialchars($speccond); ?>" class="form-input flex-1" required disabled />
+                                        <input
+                                            id="speccond"
+                                            name="speccond"
+                                            type="text"
+                                            value="<?php
+                                                    // Check the specimen condition value and assign a description
+                                                    if (isset($speccond)) {
+                                                        switch ($speccond) {
+                                                            case 3:
+                                                                $condition = "Excellent";
+                                                                break;
+                                                            case 2:
+                                                                $condition = "Good";
+                                                                break;
+                                                            case 1:
+                                                                $condition = "Fair";
+                                                                break;
+                                                            case 0:
+                                                                $condition = "Poor";
+                                                                break;
+                                                            default:
+                                                                $condition = "Unknown condition"; // Fallback for unexpected values
+                                                        }
+                                                    } else {
+                                                        $condition = "Unknown condition"; // Default if the condition is missing or null
+                                                    }
+                                                    echo htmlspecialchars($condition);
+                                                    ?>"
+                                            class="form-input flex-1"
+                                            required
+                                            disabled />
                                     </div>
 
                                     <!-- Material -->

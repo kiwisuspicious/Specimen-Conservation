@@ -7,7 +7,7 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
     exit;
 }
 include('includes/config.php');
-$pdo = pdo_connect_mysql(); 
+$pdo = pdo_connect_mysql();
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -17,23 +17,28 @@ require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
     // $mail = new PHPMailer(true);
     // $mail->isSMTP();
     // $mail->Host = 'smtp.gmail.com';
     // $mail->SMTPAuth = true;
-    // $mail->Username = '';
-    // $mail->Password = '';
+    // $mail->Username = 'faiq2001@gmail.com';
+    // $mail->Password = 'ljdi vrbr xamj rnyu';
     // $mail->SMTPSecure = 'ssl';
     // $mail->Port = 465;
-    // $mail->setFrom('');
-    // $mail->addAddress('');
+    // $mail->setFrom('faiq2001@gmail.com');
+    // $mail->addAddress('muhammadfaiqmohammad@gmail.com');
     // $mail->isHTML(true);
-    // $mail->Subject = '';
-    // $mail->Body = ;
+    // $mail->Subject = 'donotreply - Pre-Specimen Conservation Report';
+    // $mail->Body = 'Pending Approval(Bold)(br) Application ID: SCR1234 (br) Submitted On: 12/12/2024 (br) Inspector Name: Alexson (br) View Report Details: (Link Website)';
     // $mail->send();
 
-    // Sanitize and validate inputs
+    // Set the timezone to Malaysia (Asia/Kuala_Lumpur)
+    date_default_timezone_set('Asia/Kuala_Lumpur');
+
+    // Get the current date in YYYY-MM-DD format
+    $submitDate = date('Y-m-d'); // Format: 2025-01-11
+
+    // Sanitize and validate inputs (same as your existing code)
     $catalogueNum = htmlspecialchars(trim($_POST['catalogueNum']));
     $specName = htmlspecialchars(trim($_POST['specName']));
     $location = isset($_POST['location']) ? htmlspecialchars($_POST['location']) : '';
@@ -60,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $remarks = htmlspecialchars(trim($_POST['remarks']));
     $inspector = isset($_POST['inspector']) ? htmlspecialchars(trim($_POST['inspector'])) : '';
 
-    // File upload handling
+    // File upload handling (same as your existing code)
     $targetDir = "uploads/";
 
     // Generate a unique appID before folder creation and database insertion
@@ -69,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         do {
             // Generate a random 5-digit number
             $randomNumber = str_pad(rand(1, 99999), 5, '0', STR_PAD_LEFT);
-            $appID = 'APR' . $randomNumber;
+            $appID = 'SCR' . $randomNumber;
 
             // Check if appID already exists in the database
             $stmt = $pdo->prepare("SELECT COUNT(*) FROM application WHERE appID = :appID");
@@ -93,14 +98,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $uploadedFiles = [];
     $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
 
-    // Check if photos were uploaded
+    // Check if photos were uploaded (same as your existing code)
     if (!empty($_FILES['photos']['name'][0])) {
         $fileCount = count($_FILES['photos']['name']);
 
-        // // Limit to 5 files
-        // if ($fileCount > 5) {
-        //     die("Error: You can upload a maximum of 5 photos.");
-        // }
+        // Limit to 5 files
+        if ($fileCount > 5) {
+            die("Error: You can upload a maximum of 5 photos.");
+        }
 
         // Loop through uploaded files
         for ($i = 0; $i < $fileCount; $i++) {
@@ -126,19 +131,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-
-    // Database interaction to insert the new record without file paths
+    // Database interaction to insert the new record with submit_date
     try {
-        // Prepare SQL query (no file paths in specphoto column)
-        $sql = "INSERT INTO application (email, catnum, specname, location, examination, speccond, material, workmeth, inspectname, remarks, appID) 
-            VALUES (:email, :catnum, :specname, :location, :examination, :speccond, :material, :workmeth, :inspectname, :remarks, :appID)";
+        // Prepare SQL query (include submit_date field)
+        $sql = "INSERT INTO application (catnum, specname, location, examination, speccond, material, workmeth, inspectname, remarks, appID, submit_date) 
+            VALUES (:catnum, :specname, :location, :examination, :speccond, :material, :workmeth, :inspectname, :remarks, :appID, :submit_date)";
 
-        // Replace this with a session email if using authentication
-        $email = 'test@example.com';
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            ':email'       => $email,
             ':catnum'      => $catalogueNum,
             ':specname'    => $specName,
             ':location'    => $finalLocation,
@@ -148,7 +149,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':workmeth'    => $workMethod,
             ':inspectname' => $inspector,
             ':remarks'     => $remarks,
-            ':appID'       => $newAppID
+            ':appID'       => $newAppID,
+            ':submit_date' => $submitDate // Add the current date here
         ]);
 
         // Redirect to the same page after form submission
@@ -158,6 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "Error: " . $e->getMessage();
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -242,12 +245,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <!-- Catalogue Number -->
                                         <div class="flex flex-col sm:flex-row">
                                             <label for="catalogueNum" class="mb-2 sm:w-1/4 text-sm font-medium">Catalogue Number</label>
-                                            <input id="catalogueNum" name="catalogueNum" type="text" placeholder="Enter Catalogue Number" class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2" required />
+                                            <input id="catalogueNum" name="catalogueNum" type="text" placeholder="Enter Catalogue Number" class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2" />
                                         </div>
 
                                         <!-- Specimen/Object Name -->
                                         <div class="flex flex-col sm:flex-row">
-                                            <label for="specName" class="mb-2 sm:w-1/4 text-sm font-medium">Specimen/Object Name</label>
+                                            <label for="specName" class="mb-2 sm:w-1/4 text-sm font-medium">Specimen/Object Name *</label>
                                             <input id="specName" name="specName" type="text" placeholder="Enter Specimen/Object Name" class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2" required />
                                         </div>
 
@@ -274,7 +277,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                         <!-- Examination (Checkboxes for multiple selections) -->
                                         <div class="flex flex-col sm:flex-row">
-                                            <label class="mb-2 sm:w-1/4 text-sm font-medium">Examination</label>
+                                            <label class="mb-2 sm:w-1/4 text-sm font-medium">Examination *</label>
                                             <div class="mt-2 space-y-2">
                                                 <div class="flex items-center">
                                                     <input type="checkbox" id="examination-1" name="examination[]" value="Dirt Accumulation (Pengumpulan kotoran)" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
@@ -292,20 +295,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 </div>
 
                                                 <div class="flex items-center">
-                                                    <input type="checkbox" id="examination-others" name="examination[]" value="Others" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2" onclick="toggleOtherExaminationInput(true)">
+                                                    <input type="checkbox" id="examination-4" name="examination[]" value="Breaking/detaching (Pecah/terlerai)" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
+                                                    <label for="examination-4">Breaking/detaching (Pecah/terlerai)</label>
+                                                </div>
+
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" id="examination-5" name="examination[]" value="Spalling (Pengelupasan)" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
+                                                    <label for="examination-5">Spalling (Pengelupasan)</label>
+                                                </div>
+
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" id="examination-6" name="examination[]" value="Part missing (Bahagian hilang)" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
+                                                    <label for="examination-6">Part missing (Bahagian hilang)</label>
+                                                </div>
+
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" id="examination-7" name="examination[]" value="Hair loss (Bulu gugur)" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
+                                                    <label for="examination-7">Hair loss (Bulu gugur)</label>
+                                                </div>
+
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" id="examination-8" name="examination[]" value="Color fading (Warna Pudar)" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
+                                                    <label for="examination-8">Color fading (Warna Pudar)</label>
+                                                </div>
+
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" id="examination-9" name="examination[]" value="Postural instability (Ketidakstabilan postur)" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
+                                                    <label for="examination-9">Postural instability (Ketidakstabilan postur)</label>
+                                                </div>
+
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" id="examination-10" name="examination[]" value="Corrosion/rusting (Kakisan/Berkarat))" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
+                                                    <label for="examination-10">Corrosion/rusting (Kakisan/Berkarat)</label>
+                                                </div>
+
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" id="examination-11" name="examination[]" value="Pest Damage (Kerosakan oleh serangga perosak)" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
+                                                    <label for="examination-11">Pest Damage (Kerosakan oleh serangga perosak)</label>
+                                                </div>
+
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" id="examination-12" name="examination[]" value="Mold infestation (Serangan kulat)" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
+                                                    <label for="examination-12">Mold infestation (Serangan kulat)</label>
+                                                </div>
+
+                                                <div class="flex items-center">
+                                                    <input type="checkbox" id="examination-13" name="examination[]" value="Deterioration (Kemerosotan)" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
+                                                    <label for="examination-13">Deterioration (Kemerosotan)</label>
+                                                </div>
+
+                                                <div class="flex items-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="examination-others"
+                                                        name="examination[]"
+                                                        class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2"
+                                                        onclick="toggleOtherExaminationInput(this)">
                                                     <label for="examination-others">Others</label>
                                                 </div>
 
                                                 <!-- Text input for "Others" examination -->
                                                 <div id="other-examination-container" class="mt-2 hidden">
-                                                    <input type="text" id="other-examination" name="other-examination" class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2" placeholder="Enter custom examination">
+                                                    <input
+                                                        type="text"
+                                                        id="other-examination"
+                                                        name="other-examination"
+                                                        class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2"
+                                                        placeholder="Enter custom examination"
+                                                        oninput="updateOtherExaminationValue()">
                                                 </div>
                                             </div>
                                         </div>
 
                                         <!-- Condition (Radio buttons for rating 1-4) -->
                                         <div class="flex flex-col sm:flex-row">
-                                            <label class="mb-2 sm:w-1/4 text-sm font-medium">Condition</label>
+                                            <label class="mb-2 sm:w-1/4 text-sm font-medium">Condition *</label>
                                             <div class="mt-2 flex space-x-4">
                                                 <span class="mr-8">Poor</span>
                                                 <label class="flex flex-col items-center">
@@ -330,7 +394,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                         <!-- Material (Checkboxes for multiple selections) -->
                                         <div class="flex flex-col sm:flex-row">
-                                            <label class="mb-2 sm:w-1/4 text-sm font-medium">Material</label>
+                                            <label class="mb-2 sm:w-1/4 text-sm font-medium">Material *</label>
                                             <div class="mt-2 space-y-2">
                                                 <div class="flex items-center">
                                                     <input type="checkbox" id="material-1" name="material[]" value="Japanese Tissue" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2">
@@ -368,44 +432,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 </div>
 
                                                 <div class="flex items-center">
-                                                    <input type="checkbox" id="material-others" name="material[]" value="Others" class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2" onclick="toggleOtherMaterialInput(true)">
+                                                    <input
+                                                        type="checkbox"
+                                                        id="material-others"
+                                                        name="material[]"
+                                                        class="form-checkbox text-blue-500 focus:ring-blue-500 mr-2"
+                                                        onclick="toggleOtherMaterialInput(this)">
                                                     <label for="material-others">Others</label>
                                                 </div>
 
                                                 <!-- Text input for "Others" material, initially hidden -->
                                                 <div id="other-material-container" class="mt-2 hidden">
-                                                    <input type="text" id="other-material" name="other-material" class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2" placeholder="Enter custom material">
+                                                    <input
+                                                        type="text"
+                                                        id="other-material"
+                                                        name="other-material"
+                                                        class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2"
+                                                        placeholder="Enter custom material"
+                                                        oninput="updateOtherMaterialValue()">
                                                 </div>
                                             </div>
                                         </div>
 
                                         <!-- Work Method Statement -->
                                         <div class="flex flex-col sm:flex-row">
-                                            <label for="method-statement" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Work Method Statement</label>
-                                            <textarea id="method-statement" name="method-statement" rows="4" class="form-input flex-1" placeholder="Enter Method Statement"></textarea>
+                                            <label for="method-statement" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Work Method Statement *</label>
+                                            <textarea id="method-statement" name="method-statement" rows="4" class="form-input flex-1" placeholder="Enter Method Statement" required></textarea>
                                         </div>
 
                                         <!-- Photo of Specimen -->
                                         <div class="flex flex-col sm:flex-row">
-                                            <label for="photos" class="mb-2 sm:w-1/4 text-sm font-medium">Photo of Specimen</label>
-                                            <input type="file" id="photos" name="photos[]" class="form-input flex-1 p-2" multiple accept=".jpg, .jpeg, .png, .gif">
+                                            <label for="photos" class="mb-2 sm:w-1/4 text-sm font-medium">Photo of Specimen *</label>
+                                            <input type="file" id="photos" name="photos[]" class="form-input flex-1 p-2" multiple accept=".jpg, .jpeg, .png, .gif" required>
                                         </div>
 
                                         <!-- Inspector (Dropdown Menu) -->
                                         <div class="flex flex-col sm:flex-row">
-                                            <label for="inspector" class="mb-2 sm:w-1/4 text-sm font-medium">Inspector</label>
-                                            <select id="inspector" name="inspector" class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2">
+                                            <label for="inspector" class="mb-2 sm:w-1/4 text-sm font-medium">Inspector *</label>
+                                            <select id="inspector" name="inspector" class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2" required>
                                                 <option value="">Select Inspector</option>
-                                                <option value="John Doe">John Doe</option>
-                                                <option value="Jane Smith">Jane Smith</option>
-                                                <option value="Alex Johnson">Alex Johnson</option>
+                                                <option value="Alexson">Alexson</option>
+                                                <option value="Felicia">Felicia</option>
+                                                <option value="Faiqah">Faiqah</option>
+                                                <option value="Addery">Addery</option>
+                                                <option value="Alvin">Alvin</option>
+                                                <option value="Awangku Shahrir">Awangku Shahrir</option>
+                                                <option value="Siti Hazirah">Siti Hazirah</option>
                                             </select>
                                         </div>
 
                                         <!-- Examination Remarks -->
                                         <div class="flex flex-col sm:flex-row">
                                             <label for="remarks" class="mb-2 sm:w-1/4 text-sm font-medium">Examination Remarks</label>
-                                            <input type="text" id="remarks" name="remarks" class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2" placeholder="Enter Remarks">
+                                            <input type="text" id="remarks" name="remarks" class="form-input flex-1 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 p-2" placeholder="Enter Remarks" required>
                                         </div>
 
                                         <!-- Submit Button -->
@@ -440,22 +519,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             });
                         });
 
-                        function toggleOtherExaminationInput(show) {
+                        function toggleOtherExaminationInput(checkbox) {
                             const otherExaminationContainer = document.getElementById('other-examination-container');
-                            if (show) {
+                            const otherExaminationInput = document.getElementById('other-examination');
+
+                            if (checkbox.checked) {
                                 otherExaminationContainer.classList.remove('hidden');
+                                otherExaminationInput.required = true; // Make input required if "Others" is checked
                             } else {
                                 otherExaminationContainer.classList.add('hidden');
+                                otherExaminationInput.required = false; // Remove requirement when unchecked
+                                otherExaminationInput.value = ""; // Clear input value
+                                checkbox.value = "Others"; // Reset checkbox value
                             }
                         }
 
-                        function toggleOtherMaterialInput(show) {
+                        function updateOtherExaminationValue() {
+                            const checkbox = document.getElementById('examination-others');
+                            const otherExaminationInput = document.getElementById('other-examination');
+                            checkbox.value = otherExaminationInput.value; // Update checkbox value with input
+                        }
+
+                        function toggleOtherMaterialInput(checkbox) {
                             const otherMaterialContainer = document.getElementById('other-material-container');
-                            if (show) {
+                            const otherMaterialInput = document.getElementById('other-material');
+
+                            if (checkbox.checked) {
                                 otherMaterialContainer.classList.remove('hidden');
+                                otherMaterialInput.required = true; // Make the input required if "Others" is checked
                             } else {
                                 otherMaterialContainer.classList.add('hidden');
+                                otherMaterialInput.required = false; // Remove requirement when unchecked
+                                otherMaterialInput.value = ""; // Clear the input value
+                                checkbox.value = "Others"; // Reset checkbox value
                             }
+                        }
+
+                        function updateOtherMaterialValue() {
+                            const checkbox = document.getElementById('material-others');
+                            const otherMaterialInput = document.getElementById('other-material');
+                            checkbox.value = otherMaterialInput.value; // Update checkbox value with input
                         }
                     </script>
                 </div>

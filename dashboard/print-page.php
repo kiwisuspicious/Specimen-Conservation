@@ -128,6 +128,26 @@
             margin-top: 10px;
         }
 
+        .signature-section {
+            border-bottom: 1px solid #333;
+            /* Space between the top of the section and the word Signature */
+            padding-bottom: 5px;
+            /* Gap between the word "Signature" and the line */
+            font-size: 0.9rem;
+            color: #555;
+            width: 250px;
+            margin-left: auto;
+        }
+
+        .name-section {
+            padding-top: 10px;
+            /* Space between the top of the section and the word Signature */
+            font-size: 0.9rem;
+            color: #555;
+            width: 250px;
+            margin-left: auto;
+        }
+
         @media print {
             body {
                 margin: 0;
@@ -175,7 +195,7 @@
 <body>
     <header>
         <img src="favicon.png" alt="Company Logo" class="logo">
-        <h1>Application Report</h1>
+        <h1>Specimen Conservation Report</h1>
     </header>
 
     <button class="no-print" onclick="window.print()">Print This Page</button>
@@ -192,60 +212,69 @@
     $stmt->execute();
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        // Map the numeric condition to descriptive text
+        $conditionMap = [
+            3 => "Excellent",
+            2 => "Good",
+            1 => "Fair",
+            0 => "Poor"
+        ];
+        $condition = isset($conditionMap[$row['speccond']]) ? $conditionMap[$row['speccond']] : "Unknown Condition";
+
         echo "<div class='record-container'>
-                <div class='record-header'>Application ID: {$row['appID']}</div>
-                <div class='row'>
-                    <div>
-                        <label>Catalog No:</label>
-                        <span>{$row['catnum']}</span>
-                    </div>
-                    <div>
-                        <label>Specimen Name:</label>
-                        <span>{$row['specname']}</span>
-                    </div>
+            <div class='record-header'>Application ID: {$row['appID']}</div>
+            <div class='row'>
+                <div>
+                    <label>Catalog No:</label>
+                    <span>{$row['catnum']}</span>
                 </div>
-                <div class='row'>
-                    <div>
-                        <label>Location:</label>
-                        <span>{$row['location']}</span>
-                    </div>
-                    <div>
-                        <label>Examination:</label>
-                        <span>{$row['examination']}</span>
-                    </div>
+                <div>
+                    <label>Specimen Name:</label>
+                    <span>{$row['specname']}</span>
                 </div>
-                <div class='row'>
-                    <div>
-                        <label>Condition:</label>
-                        <span>{$row['speccond']}</span>
-                    </div>
-                    <div>
-                        <label>Material:</label>
-                        <span>{$row['material']}</span>
-                    </div>
+            </div>
+            <div class='row'>
+                <div>
+                    <label>Location:</label>
+                    <span>{$row['location']}</span>
                 </div>
-                <div class='row full-width'>
-                    <div>
-                        <label>Work Method:</label>
-                        <span>" . htmlspecialchars($row['workmeth']) . "</span>
-                    </div>
+                <div>
+                    <label>Examination:</label>
+                    <span>{$row['examination']}</span>
                 </div>
-                <div class='row'>
-                    <div>
-                        <label>Inspector:</label>
-                        <span>{$row['inspectname']}</span>
-                    </div>
-                    <div>
-                        <label>Remarks:</label>
-                        <span>" . htmlspecialchars($row['remarks']) . "</span>
-                    </div>
-                </div>";
+            </div>
+            <div class='row'>
+                <div>
+                    <label>Condition:</label>
+                    <span>{$condition}</span>
+                </div>
+                <div>
+                    <label>Material:</label>
+                    <span>{$row['material']}</span>
+                </div>
+            </div>
+            <div class='row full-width'>
+                <div>
+                    <label>Work Method Statement:</label>
+                    <span>" . htmlspecialchars($row['workmeth']) . "</span>
+                </div>
+            </div>
+            <div class='row'>
+                <div>
+                    <label>Inspector:</label>
+                    <span>{$row['inspectname']}</span>
+                </div>
+                <div>
+                    <label>Remarks:</label>
+                    <span>" . htmlspecialchars($row['remarks']) . "</span>
+                </div>
+            </div>";
 
         // Fetch and display Before Images
         $beforeImagesDir = "uploads/" . $appID . "/Before";
 
         echo "<div class='image-section'>
-                <h3>Before Images</h3>";
+            <h3>Before Images</h3>";
         if (is_dir($beforeImagesDir)) {
             $images = glob($beforeImagesDir . "/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,GIF}", GLOB_BRACE);
             if (!empty($images)) {
@@ -260,9 +289,34 @@
         } else {
             echo "<p class='no-images'>Directory does not exist for the specified Application ID.</p>";
         }
+
+        $afterImagesDir = "uploads/" . $appID . "/After";
+
+        echo "<div class='image-section'>
+    <h3>After Images</h3>";
+        if (is_dir($afterImagesDir)) {
+            $images = glob($afterImagesDir . "/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,GIF}", GLOB_BRACE);
+            if (!empty($images)) {
+                echo "<div class='image-grid'>";
+                foreach ($images as $image) {
+                    echo '<img src="' . htmlspecialchars($image) . '" alt="After Image">';
+                }
+                echo "</div>";
+            } else {
+                echo "<p class='no-images'>No images available in the 'After' folder.</p>";
+            }
+        } else {
+            echo "<p class='no-images'>No images available in the 'After' folder.</p>";
+        }
+
+        // Signature Section
+        echo "<div class='signature-section'>Signature:<br></div>";
+        echo "<div class='name-section'>Name:<br></div>";
+
         echo "</div></div>";
     }
     ?>
+
 </body>
 
 </html>
