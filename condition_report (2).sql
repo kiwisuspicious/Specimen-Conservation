@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 19, 2024 at 06:57 PM
+-- Generation Time: Jan 15, 2025 at 03:04 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -47,27 +47,20 @@ INSERT INTO `adminuser` (`id`, `email`, `password`) VALUES
 --
 
 CREATE TABLE `application` (
-  `email` varchar(255) NOT NULL,
   `catnum` varchar(255) NOT NULL,
   `specname` varchar(255) NOT NULL,
   `location` varchar(255) NOT NULL,
-  `examination` varchar(255) NOT NULL,
+  `examination` text NOT NULL,
   `speccond` tinyint(4) NOT NULL,
-  `material` varchar(255) NOT NULL,
+  `material` text NOT NULL,
   `workmeth` text NOT NULL,
   `inspectname` varchar(255) NOT NULL,
   `remarks` text NOT NULL,
   `appID` varchar(8) NOT NULL,
-  `status` int(11) NOT NULL
+  `status` tinyint(11) NOT NULL,
+  `reject_remarks` varchar(250) NOT NULL,
+  `submit_date` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `application`
---
-
-INSERT INTO `application` (`email`, `catnum`, `specname`, `location`, `examination`, `speccond`, `material`, `workmeth`, `inspectname`, `remarks`, `appID`, `status`) VALUES
-('test@example.com', 'dasd', 'asdasd', 'Natural History Building', 'Dirt Accumulation (Pengumpulan kotoran)', 2, 'Japanese Tissue, Wood Clay', 'dsadsad', 'Jane Smith', 'dsadas', 'APR72830', 2),
-('test@example.com', 'test', 'test', 'Natural History Building', 'Dirt Accumulation (Pengumpulan kotoran), Stitch opening (Jahitan terbuka)', 1, 'Japanese Tissue, Wood Clay', 'test', 'John Doe', 'test', 'APR80630', 0);
 
 --
 -- Indexes for dumped tables
