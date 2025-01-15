@@ -60,6 +60,7 @@
             justify-content: space-between;
             margin-bottom: 15px;
             flex-wrap: wrap;
+            width: 100%;
         }
 
         .row div {
@@ -89,7 +90,7 @@
         }
 
         .image-section {
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
         .image-section h3 {
@@ -105,21 +106,18 @@
             gap: 10px;
             /* Space between images */
             justify-content: start;
+            /* Align images to the left */
         }
 
         .image-grid img {
-            width: 120px;
-            /* Set a fixed width for images */
-            height: 120px;
-            /* Set a fixed height for images */
+            width: calc(50% - 10px);
+            /* Set fixed width for images */
+            height: calc(50% - 10px);
+            /* Set fixed height for images */
             object-fit: cover;
             /* Maintain aspect ratio */
             border-radius: 6px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .image-grid img:hover {
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         .no-images {
@@ -160,29 +158,18 @@
                 display: none;
             }
 
-            .record-container {
-                page-break-inside: avoid;
+            /* Add page break before the inspector and remarks section */
+            .row .full-width {
+                page-break-before: always;
+                /* Force a page break before the inspector and remarks section */
             }
 
-            .image-grid {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                /* Space between images */
-                justify-content: flex-start;
-                /* Align images to the left */
-            }
-
-            .image-grid img {
-                width: 100px;
-                /* Adjust image size for print */
-                height: 100px;
-                object-fit: cover;
-                border-radius: 6px;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            /* Optional: Add page break after the signature section if needed */
+            .signature-section {
+                page-break-after: always;
+                /* Force a page break after the signature section */
             }
         }
-
 
         footer {
             text-align: center;
@@ -215,14 +202,14 @@
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         // Map the numeric condition to descriptive text
         $conditionMap = [
-            3 => "Excellent",
-            2 => "Good",
-            1 => "Fair",
-            0 => "Poor"
+            4 => "Excellent",
+            3 => "Good",
+            2 => "Fair",
+            1 => "Poor"
         ];
         $condition = isset($conditionMap[$row['speccond']]) ? $conditionMap[$row['speccond']] : "Unknown Condition";
 
-        echo "<div class='record-container'>
+        echo "
             <div class='record-header'>Application ID: {$row['appID']}</div>
             <div class='row'>
                 <div>
@@ -259,6 +246,10 @@
                     <label>Work Method Statement:</label>
                     <span>" . htmlspecialchars($row['workmeth']) . "</span>
                 </div>
+                <div>
+                    <label>Submit Date:</label>
+                    <span>" . htmlspecialchars($row['submit_date']) . "</span>
+                </div>
             </div>
             <div class='row'>
                 <div>
@@ -268,14 +259,13 @@
                 <div>
                     <label>Remarks:</label>
                     <span>" . htmlspecialchars($row['remarks']) . "</span>
-                </div>
-            </div>";
+                </div>";
 
-        // Fetch and display Before Images
-        $beforeImagesDir = "uploads/" . $appID . "/Before";
-
-        echo "<div class='image-section'>
+        // Before Images Section
+        echo "<div class='row'>
+        <div style = 'width: 100%'>
             <h3>Before Images</h3>";
+        $beforeImagesDir = "uploads/" . $appID . "/Before";
         if (is_dir($beforeImagesDir)) {
             $images = glob($beforeImagesDir . "/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,GIF}", GLOB_BRACE);
             if (!empty($images)) {
@@ -290,11 +280,13 @@
         } else {
             echo "<p class='no-images'>Directory does not exist for the specified Application ID.</p>";
         }
+        echo "</div></div>"; // End of Before Images Row
 
+        // After Images Section
+        echo "<div class='row'>
+        <div style = 'width: 100%'>
+            <h3>After Images</h3>";
         $afterImagesDir = "uploads/" . $appID . "/After";
-
-        echo "<div class='image-section'>
-    <h3>After Images</h3>";
         if (is_dir($afterImagesDir)) {
             $images = glob($afterImagesDir . "/*.{jpg,jpeg,png,gif,JPG,JPEG,PNG,GIF}", GLOB_BRACE);
             if (!empty($images)) {
@@ -309,12 +301,12 @@
         } else {
             echo "<p class='no-images'>No images available in the 'After' folder.</p>";
         }
+        echo "</div></div>"; // End of After Images Row
 
         // Signature Section
+        echo "<div class='row'>";
+        echo "</div>";
         echo "<div class='signature-section'>Signature:<br></div>";
-        echo "<div class='name-section'>Name:<br></div>";
-
-        echo "</div></div>";
     }
     ?>
 

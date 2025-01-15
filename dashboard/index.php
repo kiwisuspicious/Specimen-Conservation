@@ -67,9 +67,9 @@ session_start();
                     <div x-data="sales" class="w-full max-w-lg">
                         <!-- Each button in its own row -->
                         <div class="flex flex-col mt-6 space-y-3">
-                            <a href="https://localhost/Specimen-Conservation/dashboard/submit-report.php" class="btn btn-info w-full">Submit Report</a>
-                            <a href="https://localhost/Specimen-Conservation/dashboard/submission.php" class="btn btn-warning w-full">Submission</a>
+                            <a href="https://localhost/Specimen-Conservation/dashboard/submit-report.php" class="btn btn-info w-full">Specimen Conservation Form</a>
                             <a href="https://localhost/Specimen-Conservation/dashboard/dashboard.php" class="btn btn-danger w-full">Dashboard</a>
+                            <a href="https://localhost/Specimen-Conservation/dashboard/admin-login.php" class="btn btn-warning w-full">Sign In Admin</a>
                         </div>
                     </div>
                 </div>

@@ -17,21 +17,6 @@ require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // $mail = new PHPMailer(true);
-    // $mail->isSMTP();
-    // $mail->Host = 'smtp.gmail.com';
-    // $mail->SMTPAuth = true;
-    // $mail->Username = '';
-    // $mail->Password = '';
-    // $mail->SMTPSecure = 'ssl';
-    // $mail->Port = 465;
-    // $mail->setFrom('');
-    // $mail->addAddress('');
-    // $mail->isHTML(true);
-    // $mail->Subject = 'donotreply - Pre-Specimen Conservation Report';
-    // $mail->Body = 'Pending Approval(Bold)(br) Application ID: SCR1234 (br) Submitted On: 12/12/2024 (br) Inspector Name: Alexson (br) View Report Details: (Link Website)';
-    // $mail->send();
-
     // Set the timezone to Malaysia (Asia/Kuala_Lumpur)
     date_default_timezone_set('Asia/Kuala_Lumpur');
 
@@ -152,6 +137,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':appID'       => $newAppID,
             ':submit_date' => $submitDate // Add the current date here
         ]);
+
+    //     $mail = new PHPMailer(true);
+    //     $mail->isSMTP();
+    //     $mail->Host = 'smtp.gmail.com';
+    //     $mail->SMTPAuth = true;
+    //     $mail->Username = ''; //letak email diripun
+    //     $mail->Password = ''; //letak APP Password
+    //     $mail->SMTPSecure = 'ssl';
+    //     $mail->Port = 465;
+    //     $mail->setFrom(''); //letak email diripun
+    //     $mail->addAddress('); //email reciever
+    //     $mail->isHTML(true);
+    //     $mail->Subject = 'donotreply - Pending Approval Pre-Specimen Conservation Report';
+    //     $reportLink = 'https://localhost/Specimen-Conservation/dashboard/index.php';
+
+    //     $mail->Body = '
+    // <div style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">
+    //     <h1 style="font-family: Arial, sans-serif; font-size: 24px; color: #444;">Pre-Specimen Conservation Report</h1><br><br>
+    //     <p>Application ID: ' . htmlspecialchars($newAppID) . '</p>
+    //     <p>Submitted On: ' . htmlspecialchars($submitDate) . '</p>
+    //     <p>Inspector Name: ' . htmlspecialchars($inspector) . '</p>
+    //     <p>View Report Details: <a href="' . htmlspecialchars($reportLink) . '" target="_blank" style="color: #007BFF; text-decoration: none;">Link Website</a></p>
+    // </div>';
+    //     $mail->send();
+
 
         // Redirect to the same page after form submission
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -457,7 +467,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <!-- Work Method Statement -->
                                         <div class="flex flex-col sm:flex-row">
                                             <label for="method-statement" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Work Method Statement *</label>
-                                            <textarea id="method-statement" name="method-statement" rows="4" class="form-input flex-1" placeholder="Enter Method Statement" required></textarea>
+                                            <textarea id="method-statement" name="method-statement" rows="4" class="form-input flex-1" placeholder="Enter Work Method Statement" required></textarea>
                                         </div>
 
                                         <!-- Photo of Specimen -->

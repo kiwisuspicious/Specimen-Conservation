@@ -41,6 +41,7 @@ if (!empty($appID)) {
         $workmeth = $row['workmeth'];
         $inspectname = $row['inspectname'];
         $remarks = $row['remarks'];
+        $rejectRem = $row['reject_remarks'];
         $status = $row['status'];
     } else {
         die("Error: Application ID not found.");
@@ -203,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                     <!-- Category Number -->
                                     <div class="flex flex-col sm:flex-row">
-                                        <label for="catnum" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Category Number</label>
+                                        <label for="catnum" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Catalogue Number</label>
                                         <input id="catnum" name="catnum" type="text" value="<?php echo htmlspecialchars($catnum); ?>" class="form-input flex-1" required disabled />
                                     </div>
 
@@ -269,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                                     <!-- Work Method -->
                                     <div class="flex flex-col sm:flex-row">
-                                        <label for="workmeth" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Work Method</label>
+                                        <label for="workmeth" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Work Method Statement</label>
                                         <textarea id="workmeth" name="workmeth" class="form-input flex-1" required disabled><?php echo htmlspecialchars($workmeth); ?></textarea>
                                     </div>
 
@@ -330,6 +331,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                 echo '<p class="w-full text-gray-500">Directory does not exist for the specified Application ID.</p>';
                                             }
                                             ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if ($status === 2): ?>
+                                        <!-- Remarks -->
+                                        <div class="flex flex-col sm:flex-row">
+                                            <label for="rejectRem" class="mb-0 rtl:ml-2 sm:w-1/4 sm:ltr:mr-2">Reject Remarks</label>
+                                            <textarea id="rejectRem" name="rejectRem" class="form-input flex-1" required disabled><?php echo htmlspecialchars($rejectRem); ?></textarea>
                                         </div>
                                     <?php endif; ?>
 
